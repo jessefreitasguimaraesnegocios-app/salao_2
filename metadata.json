@@ -1,0 +1,8 @@
+{
+  "name": "BelezaHub - SaaS Beauty & Aesthetics Management",
+  "description": "A multi-tenant SaaS platform for beauty salons and barbershops with integrated payment splits, business management dashboards, and a customer storefront.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
