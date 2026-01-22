@@ -15,6 +15,15 @@ View your app in AI Studio: https://ai.studio/apps/drive/1TDzropILLJHsHYpnXxJc60
 
 1. Install dependencies:
    `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
+2. Configure environment variables in `.env`:
+   - `VITE_SUPABASE_URL` - Your Supabase project URL
+   - `VITE_SUPABASE_ANON_KEY` - Your Supabase anonymous key
+   - `VITE_MP_CLIENT_ID` - Mercado Pago Client ID (optional)
+   - `VITE_MP_CLIENT_SECRET` - Mercado Pago Client Secret (optional)
+3. Configure Supabase Edge Function secrets:
+   - `GEMINI_API_KEY` - Your Gemini API key (for AI features)
+   - `SERVICE_ROLE_KEY` - Supabase service role key
+   - `MP_CLIENT_ID` - Mercado Pago Client ID
+   - `MP_CLIENT_SECRET` - Mercado Pago Client Secret
+4. Run the app:
    `npm run dev`
