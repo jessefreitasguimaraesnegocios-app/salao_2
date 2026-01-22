@@ -136,17 +136,32 @@ export async function updateTransactionWithPaymentId(
   paymentId: string
 ): Promise<void> {
   try {
-    // Em produção, usar Supabase client
-    // Por enquanto, apenas log
-    console.log(`Atualizando transação ${transactionId} com payment_id ${paymentId}`);
+    // Importar e obter cliente Supabase
+    const { getSupabaseClient } = await import('./supabaseClient');
+    const supabase = getSupabaseClient();
     
-    // TODO: Implementar chamada ao Supabase
-    // const { error } = await supabase
-    //   .from('transactions')
-    //   .update({ mp_payment_id: paymentId })
-    //   .eq('id', transactionId);
+    // Atualizar transação com o payment_id
+    const { error } = await supabase
+      .from('transactions')
+      .update({ 
+        mp_payment_id: paymentId,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', transactionId);
+
+    if (error) {
+      console.error('Erro ao atualizar transação:', error);
+      throw error;
+    }
+
+    console.log(`✅ Transação ${transactionId} atualizada com payment_id ${paymentId}`);
   } catch (error) {
     console.error('Erro ao atualizar transação:', error);
+    // Não relançar o erro se for problema de configuração
+    if (error instanceof Error && error.message.includes('not configured')) {
+      console.warn('⚠️ Supabase não configurado. Transação não foi atualizada no banco.');
+      return;
+    }
     throw error;
   }
 }
