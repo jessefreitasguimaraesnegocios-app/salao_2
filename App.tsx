@@ -14,6 +14,7 @@ import { OwnerTeam } from './pages/owner/Team';
 import { OwnerSettings } from './pages/owner/Settings';
 import { CustomerExplore } from './pages/customer/Explore';
 import { CustomerOrders } from './pages/customer/Orders';
+import { CustomerAppointments } from './pages/customer/Appointments';
 import { StoreDetail } from './pages/customer/StoreDetail';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { AdminPartners } from './pages/admin/Partners';
@@ -32,27 +33,25 @@ const Layout: React.FC<{ user: UserProfile, children: React.ReactNode }> = ({ us
 
   return (
     <div className="min-h-screen bg-slate-50 flex">
-      <Sidebar role={user.role} userName={user.name} />
+      <Sidebar 
+        role={user.role} 
+        userName={user.name} 
+        businessId={user.business_id}
+        isMobileOpen={isMobileMenuOpen}
+        onMobileClose={() => setIsMobileMenuOpen(false)}
+      />
       
       {/* Mobile Top Bar */}
       <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b border-slate-200 z-50 px-4 flex items-center justify-between shadow-sm">
-        <span className="font-black text-xl text-indigo-600">BelezaHub</span>
-        <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 text-slate-600">
+        <span className="font-black text-xl text-indigo-600">Meu Salão App</span>
+        <button 
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
+          className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+          aria-label="Toggle menu"
+        >
           {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
       </div>
-
-      {/* Mobile Menu Overlay */}
-      {isMobileMenuOpen && (
-        <div className="md:hidden fixed inset-0 z-40 bg-slate-900 text-white p-8 pt-24 animate-in fade-in slide-in-from-top-4 duration-300">
-          <nav className="space-y-6 text-center">
-            <h2 className="text-slate-500 uppercase text-[10px] font-black tracking-widest mb-8">Menu Principal</h2>
-            <p className="text-xl font-bold">Início</p>
-            <p className="text-xl font-bold">Explorar</p>
-            <button onClick={() => { api.logout(); window.location.reload(); }} className="text-red-400 font-bold mt-12">Sair da Conta</button>
-          </nav>
-        </div>
-      )}
 
       <main className="flex-1 md:ml-64 pt-16 md:pt-0 overflow-y-auto min-h-screen">
         <div className="max-w-7xl mx-auto">
@@ -77,7 +76,7 @@ const App: React.FC = () => {
   if (loading) return (
     <div className="h-screen w-screen flex flex-col items-center justify-center bg-slate-50">
       <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
-      <p className="mt-4 text-slate-400 font-medium animate-pulse">Carregando BelezaHub...</p>
+      <p className="mt-4 text-slate-400 font-medium animate-pulse">Carregando Meu Salão App...</p>
     </div>
   );
 
@@ -91,6 +90,7 @@ const App: React.FC = () => {
         <Route path="/explore" element={user ? <Layout user={user}><CustomerExplore /></Layout> : <Navigate to="/" />} />
         <Route path="/store/:id" element={user ? <Layout user={user}><StoreDetail /></Layout> : <Navigate to="/" />} />
         <Route path="/orders" element={user ? <Layout user={user}><CustomerOrders /></Layout> : <Navigate to="/" />} />
+        <Route path="/appointments" element={user ? <Layout user={user}><CustomerAppointments /></Layout> : <Navigate to="/" />} />
         
         {/* Owner Routes */}
         <Route path="/owner" element={user?.role === UserRole.BUSINESS_OWNER ? <Layout user={user}><OwnerDashboard /></Layout> : <Navigate to="/" />} />

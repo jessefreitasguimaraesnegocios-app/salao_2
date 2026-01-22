@@ -58,8 +58,22 @@ const initialData: DataStore = {
     }
   ],
   products: [
+    // Categoria: Cabelo
     { id: 'p1', business_id: 'b1', name: 'Pomada Modeladora', price: 45.90, stock: 20, image: 'https://picsum.photos/seed/pomada/200/200', category: 'Cabelo', is_active: true },
+    { id: 'p3', business_id: 'b1', name: 'Shampoo Antiqueda', price: 38.00, stock: 25, image: 'https://picsum.photos/seed/shampoo/200/200', category: 'Cabelo', is_active: true },
+    { id: 'p4', business_id: 'b1', name: 'Gel Fixação Forte', price: 29.90, stock: 30, image: 'https://picsum.photos/seed/gel/200/200', category: 'Cabelo', is_active: true },
+    { id: 'p5', business_id: 'b1', name: 'Condicionador Premium', price: 42.00, stock: 18, image: 'https://picsum.photos/seed/conditioner/200/200', category: 'Cabelo', is_active: true },
+    // Categoria: Barba
     { id: 'p2', business_id: 'b1', name: 'Óleo para Barba', price: 35.00, stock: 15, image: 'https://picsum.photos/seed/oil/200/200', category: 'Barba', is_active: true },
+    { id: 'p6', business_id: 'b1', name: 'Balm Hidratante', price: 48.00, stock: 12, image: 'https://picsum.photos/seed/balm/200/200', category: 'Barba', is_active: true },
+    { id: 'p7', business_id: 'b1', name: 'Cera para Bigode', price: 25.00, stock: 20, image: 'https://picsum.photos/seed/wax/200/200', category: 'Barba', is_active: true },
+    // Categoria: Acessórios
+    { id: 'p8', business_id: 'b1', name: 'Pente de Madeira', price: 22.00, stock: 35, image: 'https://picsum.photos/seed/comb/200/200', category: 'Acessórios', is_active: true },
+    { id: 'p9', business_id: 'b1', name: 'Escova de Barba', price: 32.00, stock: 15, image: 'https://picsum.photos/seed/brush/200/200', category: 'Acessórios', is_active: true },
+    { id: 'p10', business_id: 'b1', name: 'Nécessaire Couro', price: 89.90, stock: 8, image: 'https://picsum.photos/seed/bag/200/200', category: 'Acessórios', is_active: true },
+    // Categoria: Kits
+    { id: 'p11', business_id: 'b1', name: 'Kit Barba Completo', price: 149.90, stock: 10, image: 'https://picsum.photos/seed/kit1/200/200', category: 'Kits', is_active: true },
+    { id: 'p12', business_id: 'b1', name: 'Kit Cabelo Premium', price: 129.90, stock: 12, image: 'https://picsum.photos/seed/kit2/200/200', category: 'Kits', is_active: true },
   ],
   services: [
     { id: 's1', business_id: 'b1', name: 'Corte Degradê', price: 50.00, duration: 45, is_active: true },

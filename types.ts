@@ -50,6 +50,7 @@ export interface Business {
   status: 'ACTIVE' | 'PENDING' | 'SUSPENDED';
   description: string;
   logo?: string;
+  cover_image?: string; // Foto de fundo/banner do perfil
   mp_connected: boolean;
   address?: string;
   opening_hours?: OpeningHour[];

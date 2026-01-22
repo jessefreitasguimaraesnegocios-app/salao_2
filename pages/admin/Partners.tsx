@@ -25,6 +25,7 @@ export const AdminPartners: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPartner, setEditingPartner] = useState<Partial<Business> | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; partner: Business | null }>({ isOpen: false, partner: null });
 
   useEffect(() => {
     load();
@@ -41,11 +42,20 @@ export const AdminPartners: React.FC = () => {
     load();
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm('ATENÇÃO: Isso excluirá permanentemente este estabelecimento e todos os seus dados (produtos, serviços, membros). Deseja continuar?')) {
-      await api.deleteBusiness(id);
+  const handleDeleteClick = (partner: Business) => {
+    setDeleteConfirm({ isOpen: true, partner });
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (deleteConfirm.partner) {
+      await api.deleteBusiness(deleteConfirm.partner.id);
+      setDeleteConfirm({ isOpen: false, partner: null });
       load();
     }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteConfirm({ isOpen: false, partner: null });
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -181,7 +191,7 @@ export const AdminPartners: React.FC = () => {
                         <Power size={20} />
                       </button>
                       <button 
-                        onClick={() => handleDelete(p.id)}
+                        onClick={() => handleDeleteClick(p)}
                         className="p-3 text-slate-300 hover:text-red-500 hover:bg-white rounded-2xl transition-all border border-transparent hover:border-red-100 shadow-sm"
                         title="Remover Permanentemente"
                       >
@@ -291,6 +301,67 @@ export const AdminPartners: React.FC = () => {
                 <Save size={24} /> {editingPartner?.id ? 'Aplicar Novas Taxas' : 'Cadastrar e Ativar Parceiro'}
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Confirmação de Exclusão */}
+      {deleteConfirm.isOpen && deleteConfirm.partner && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-md rounded-[40px] shadow-2xl animate-in zoom-in-95 duration-200 overflow-hidden">
+            <div className="p-8 border-b border-slate-100 bg-red-50/50">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center">
+                  <AlertCircle size={32} className="text-red-600" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-black text-slate-900">Confirmar Exclusão</h3>
+                  <p className="text-slate-500 text-sm font-medium">Esta ação não pode ser desfeita</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="p-8 space-y-6">
+              <div className="p-6 bg-red-50 rounded-3xl border border-red-100">
+                <p className="text-sm font-bold text-red-900 mb-2">
+                  Você está prestes a excluir permanentemente:
+                </p>
+                <p className="text-lg font-black text-slate-900 mb-4">
+                  {deleteConfirm.partner.name}
+                </p>
+                <div className="space-y-2 text-xs font-medium text-red-700">
+                  <p className="flex items-center gap-2">
+                    <AlertCircle size={14} /> Todos os produtos serão removidos
+                  </p>
+                  <p className="flex items-center gap-2">
+                    <AlertCircle size={14} /> Todos os serviços serão removidos
+                  </p>
+                  <p className="flex items-center gap-2">
+                    <AlertCircle size={14} /> Todos os membros da equipe serão removidos
+                  </p>
+                  <p className="flex items-center gap-2">
+                    <AlertCircle size={14} /> Histórico de transações será mantido para auditoria
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <button 
+                  onClick={handleDeleteCancel}
+                  className="flex-1 py-4 bg-white text-slate-600 border border-slate-200 rounded-2xl font-black text-sm hover:bg-slate-50 transition-all active:scale-95"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  onClick={handleDeleteConfirm}
+                  className="flex-1 py-4 bg-red-600 text-white rounded-2xl font-black text-sm hover:bg-red-700 transition-all active:scale-95 shadow-lg shadow-red-200"
+                >
+                  <span className="flex items-center justify-center gap-2">
+                    <Trash2 size={18} /> Excluir Permanentemente
+                  </span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

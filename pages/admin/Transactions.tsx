@@ -10,7 +10,6 @@ import {
   Activity,
   DollarSign,
   TrendingUp,
-  PieChart,
   Calendar,
   Filter,
   CheckCircle2,
@@ -222,21 +221,6 @@ export const AdminTransactions: React.FC = () => {
             </div>
           )}
         </div>
-      </div>
-
-      <div className="mt-8 p-6 bg-indigo-600 rounded-[32px] text-white flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl shadow-indigo-100">
-        <div className="flex items-center gap-4">
-          <div className="p-3 bg-white/20 rounded-2xl">
-            <PieChart size={24} />
-          </div>
-          <div>
-            <h4 className="font-black text-lg">Resumo de Performance Global</h4>
-            <p className="text-indigo-100 text-sm font-medium">Sua plataforma está operando com uma margem de segurança de 98.4%.</p>
-          </div>
-        </div>
-        <button className="px-8 py-3 bg-white text-indigo-600 rounded-2xl font-black text-sm hover:bg-indigo-50 transition-all active:scale-95">
-          Ver Auditoria Completa
-        </button>
       </div>
     </div>
   );

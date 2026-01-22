@@ -8,6 +8,7 @@ export const NAVIGATION = {
     { label: 'Início', icon: <Home size={20} />, path: '/' },
     { label: 'Explorar', icon: <Scissors size={20} />, path: '/explore' },
     { label: 'Meus Pedidos', icon: <ShoppingBag size={20} />, path: '/orders' },
+    { label: 'Agendamentos', icon: <Calendar size={20} />, path: '/appointments' },
   ],
   [UserRole.BUSINESS_OWNER]: [
     { label: 'Dashboard', icon: <LayoutDashboard size={20} />, path: '/owner' },

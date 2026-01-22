@@ -19,7 +19,6 @@ import { DashboardCard } from '../../components/DashboardCard';
 import { api } from '../../services/mockApi';
 import { Transaction, Business, Appointment } from '../../types';
 import { getBusinessAdvice } from '../../services/aiAssistant';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Link } from 'react-router-dom';
 
 export const OwnerDashboard: React.FC = () => {
@@ -68,13 +67,6 @@ export const OwnerDashboard: React.FC = () => {
     .sort((a, b) => a.time.localeCompare(b.time))
     .slice(0, 3);
 
-  const chartData = transactions
-    .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
-    .map(t => ({
-      name: new Date(t.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }),
-      valor: t.partner_net
-    }));
-
   return (
     <div className="p-4 md:p-8 pb-24">
       {/* Header com Saudação e IA */}
@@ -113,7 +105,7 @@ export const OwnerDashboard: React.FC = () => {
               <div className="p-2 bg-indigo-600 rounded-xl text-white">
                 <Sparkles size={20} />
               </div>
-              <h3 className="text-xl font-black text-slate-900">BelezaHub Insights</h3>
+              <h3 className="text-xl font-black text-slate-900">Meu Salão App Insights</h3>
               <button onClick={() => setAdvice('')} className="ml-auto text-slate-300 hover:text-slate-500 transition-colors">
                 <Plus size={20} className="rotate-45" />
               </button>
@@ -159,63 +151,9 @@ export const OwnerDashboard: React.FC = () => {
       {/* Conteúdo Principal do Dashboard */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         
-        {/* Lado Esquerdo: Gráfico e Atalhos */}
+        {/* Lado Esquerdo: Atalhos */}
         <div className="lg:col-span-8 space-y-8">
           
-          {/* Gráfico de Vendas Pro */}
-          <div className="bg-white p-8 rounded-[40px] border border-slate-200 shadow-sm">
-            <div className="flex items-center justify-between mb-8">
-              <div>
-                <h3 className="text-xl font-black text-slate-900">Fluxo de Caixa</h3>
-                <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Últimos 15 dias</p>
-              </div>
-              <select className="bg-slate-50 border-none rounded-xl px-4 py-2 text-sm font-bold text-slate-600 outline-none">
-                <option>Filtrar por Período</option>
-                <option>Hoje</option>
-                <option>Esta Semana</option>
-              </select>
-            </div>
-            
-            <div className="h-72 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartData}>
-                  <defs>
-                    <linearGradient id="colorVal" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#6366f1" stopOpacity={0.1}/>
-                      <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                  <XAxis 
-                    dataKey="name" 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{fill: '#94a3b8', fontSize: 12, fontWeight: 600}} 
-                    dy={10}
-                  />
-                  <YAxis 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{fill: '#94a3b8', fontSize: 12, fontWeight: 600}}
-                  />
-                  <Tooltip 
-                    contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)'}}
-                    itemStyle={{fontWeight: 800, color: '#4f46e5'}}
-                  />
-                  <Area 
-                    type="monotone" 
-                    dataKey="valor" 
-                    stroke="#4f46e5" 
-                    strokeWidth={4} 
-                    fillOpacity={1} 
-                    fill="url(#colorVal)" 
-                    activeDot={{ r: 8, strokeWidth: 0, fill: '#4f46e5' }}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
           {/* Atalhos de Ação Rápida */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <Link to="/owner/appointments" className="bg-white p-6 rounded-[32px] border border-slate-200 hover:border-indigo-600 hover:shadow-lg transition-all text-center group">

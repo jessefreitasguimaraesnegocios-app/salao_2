@@ -3,6 +3,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { api } from '../../services/mockApi';
 import { Business, OpeningHour, BusinessType, NotificationSettings } from '../../types';
 import { 
+  initiateMercadoPagoOAuth, 
+  checkMercadoPagoCallback, 
+  handleMercadoPagoCallback,
+  saveMercadoPagoTokens 
+} from '../../services/mercadoPagoOAuth';
+import { 
   Store, 
   MapPin, 
   Clock, 
@@ -25,7 +31,10 @@ import {
   EyeOff,
   MessageSquare,
   ExternalLink,
-  Info
+  Info,
+  Calendar,
+  CheckCircle2,
+  X
 } from 'lucide-react';
 
 export const OwnerSettings: React.FC = () => {
@@ -35,16 +44,60 @@ export const OwnerSettings: React.FC = () => {
   const [isConnectingMP, setIsConnectingMP] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [isPayingSubscription, setIsPayingSubscription] = useState(false);
+  const [subscriptionStatus, setSubscriptionStatus] = useState<'active' | 'pending' | 'expired'>('active');
+  const [nextBillingDate, setNextBillingDate] = useState<Date | null>(null);
   
   // Camera & Image handling
   const [isCameraActive, setIsCameraActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const coverImageInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     loadBusiness();
+    
+    // Verifica se há um callback OAuth do Mercado Pago
+    const callback = checkMercadoPagoCallback();
+    if (callback) {
+      handleMercadoPagoOAuthCallback(callback.code, callback.state);
+    }
+
+    // Inicializa a data da próxima cobrança (30 dias a partir de hoje)
+    const nextDate = new Date();
+    nextDate.setDate(nextDate.getDate() + 30);
+    setNextBillingDate(nextDate);
   }, []);
+
+  const handleMercadoPagoOAuthCallback = async (code: string, state: string) => {
+    if (!business) return;
+    
+    setIsConnectingMP(true);
+    try {
+      // Processa o callback OAuth
+      const tokens = await handleMercadoPagoCallback(code, state);
+      
+      // Salva os tokens
+      await saveMercadoPagoTokens(business.id, tokens.access_token, tokens.refresh_token);
+      
+      // Atualiza o status de conexão
+      const updatedBusiness = {
+        ...business,
+        mp_connected: true
+      };
+      
+      await api.updateBusiness(business.id, updatedBusiness);
+      setBusiness(updatedBusiness);
+      setIsConnectingMP(false);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (error) {
+      console.error('Erro ao processar callback OAuth:', error);
+      setIsConnectingMP(false);
+      alert('Erro ao conectar com o Mercado Pago. Por favor, tente novamente.');
+    }
+  };
 
   const loadBusiness = async () => {
     const user = await api.getCurrentUser();
@@ -76,23 +129,41 @@ export const OwnerSettings: React.FC = () => {
     setTimeout(() => setSaveSuccess(false), 3000);
   };
 
-  const handleConnectMP = async () => {
+  const handleConnectMP = () => {
     if (!business) return;
-    setIsConnectingMP(true);
     
-    // Simulando o fluxo de OAuth do Mercado Pago
-    await new Promise(resolve => setTimeout(resolve, 2500));
+    // Inicia o fluxo OAuth do Mercado Pago
+    // Isso redirecionará o usuário para a página de autorização do Mercado Pago
+    initiateMercadoPagoOAuth(business.id);
+  };
+
+  const handlePaySubscription = async () => {
+    if (!business || !business.mp_connected) {
+      alert('Por favor, conecte sua conta do Mercado Pago primeiro.');
+      return;
+    }
+
+    setIsPayingSubscription(true);
     
-    const updatedBusiness = {
-      ...business,
-      mp_connected: true
-    };
-    
-    await api.updateBusiness(business.id, updatedBusiness);
-    setBusiness(updatedBusiness);
-    setIsConnectingMP(false);
-    setSaveSuccess(true);
-    setTimeout(() => setSaveSuccess(false), 3000);
+    try {
+      // Simula o processo de pagamento da mensalidade via Mercado Pago
+      // Em produção, isso deve chamar a API do Mercado Pago para criar um pagamento recorrente
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Atualiza a data da próxima cobrança
+      const nextDate = new Date();
+      nextDate.setDate(nextDate.getDate() + 30);
+      setNextBillingDate(nextDate);
+      setSubscriptionStatus('active');
+      
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (error) {
+      console.error('Erro ao processar pagamento:', error);
+      alert('Erro ao processar pagamento. Por favor, tente novamente.');
+    } finally {
+      setIsPayingSubscription(false);
+    }
   };
 
   const toggleNotification = (key: keyof NotificationSettings) => {
@@ -120,6 +191,17 @@ export const OwnerSettings: React.FC = () => {
       reader.onloadend = () => {
         setBusiness(prev => prev ? { ...prev, logo: reader.result as string } : null);
         setIsCameraActive(false);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleCoverImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setBusiness(prev => prev ? { ...prev, cover_image: reader.result as string } : null);
       };
       reader.readAsDataURL(file);
     }
@@ -279,6 +361,54 @@ export const OwnerSettings: React.FC = () => {
                     </div>
                   </div>
 
+                  {/* Foto de Fundo */}
+                  <div className="mt-8">
+                    <label className="block text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] mb-3">Foto de Fundo do Perfil</label>
+                    <div className="relative w-full h-48 rounded-3xl overflow-hidden bg-slate-100 border-2 border-slate-200 group">
+                      {business.cover_image ? (
+                        <img 
+                          src={business.cover_image} 
+                          alt="Foto de fundo" 
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-100 to-slate-100">
+                          <div className="text-center">
+                            <Upload size={32} className="mx-auto text-slate-400 mb-2" />
+                            <p className="text-xs font-medium text-slate-500">Nenhuma foto de fundo</p>
+                          </div>
+                        </div>
+                      )}
+                      
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                        <button 
+                          type="button" 
+                          onClick={() => coverImageInputRef.current?.click()} 
+                          className="p-3 bg-white rounded-xl text-indigo-600 shadow-lg hover:bg-indigo-50 transition-all flex items-center gap-2 font-bold"
+                        >
+                          <Upload size={18} /> {business.cover_image ? 'Alterar Foto' : 'Adicionar Foto'}
+                        </button>
+                        {business.cover_image && (
+                          <button 
+                            type="button" 
+                            onClick={() => setBusiness(prev => prev ? { ...prev, cover_image: undefined } : null)} 
+                            className="p-3 bg-red-600 text-white rounded-xl shadow-lg hover:bg-red-700 transition-all flex items-center gap-2 font-bold"
+                          >
+                            <X size={18} /> Remover
+                          </button>
+                        )}
+                      </div>
+                      <input 
+                        type="file" 
+                        ref={coverImageInputRef} 
+                        className="hidden" 
+                        accept="image/*" 
+                        onChange={handleCoverImageUpload} 
+                      />
+                    </div>
+                    <p className="mt-2 text-xs text-slate-400 font-medium">Esta foto aparece como fundo do perfil da sua loja para os clientes</p>
+                  </div>
+
                   <div className="mt-8 space-y-6">
                     <div>
                       <label className="block text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] mb-3">Descrição Pública</label>
@@ -404,7 +534,7 @@ export const OwnerSettings: React.FC = () => {
                           disabled={isConnectingMP}
                           className="flex items-center gap-3 px-12 py-5 bg-[#009EE3] text-white rounded-[24px] font-black text-lg shadow-2xl shadow-blue-200 hover:bg-[#0081BC] transition-all mx-auto active:scale-95 disabled:opacity-50"
                         >
-                          {isConnectingMP ? <RefreshCw size={24} className="animate-spin" /> : <><ExternalLink size={24} /> Conectar Agora</>}
+                          {isConnectingMP ? <RefreshCw size={24} className="animate-spin" /> : <><ExternalLink size={24} /> Conectar ao Mercado Pago</>}
                         </button>
                         
                         <div className="mt-8 flex items-center justify-center gap-4 text-slate-400">
@@ -442,6 +572,183 @@ export const OwnerSettings: React.FC = () => {
                                 <Info size={14} /> Ver Extrato MP
                               </button>
                             </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Seção de Mensalidade/Assinatura */}
+                <div className="bg-white p-8 rounded-[40px] border border-slate-200 shadow-sm overflow-hidden relative mt-6">
+                  <div className="absolute top-0 left-0 w-32 h-32 bg-green-50 rounded-br-full -z-0 -translate-x-10 -translate-y-10" />
+                  
+                  <div className="relative z-10">
+                    <h3 className="text-xl font-black text-slate-900 mb-8 flex items-center gap-2">
+                      <Calendar size={20} className="text-green-600" /> Assinatura Mensal
+                    </h3>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                      <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-6 rounded-3xl border border-green-100">
+                        <p className="text-[10px] font-black uppercase text-green-600 tracking-widest mb-1">Valor da Mensalidade</p>
+                        <p className="text-3xl font-black text-green-700">R$ {business.monthly_fee?.toFixed(2) || '0.00'}</p>
+                        <p className="text-xs text-green-600/70 mt-2">Cobrança automática mensal.</p>
+                      </div>
+                      
+                      <div className={`p-6 rounded-3xl shadow-xl ${
+                        subscriptionStatus === 'active' 
+                          ? 'bg-green-600 text-white' 
+                          : subscriptionStatus === 'pending'
+                          ? 'bg-amber-500 text-white'
+                          : 'bg-red-500 text-white'
+                      }`}>
+                        <p className="text-[10px] font-black uppercase opacity-80 tracking-widest mb-1">Status da Assinatura</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <div className={`w-3 h-3 rounded-full ${
+                            subscriptionStatus === 'active' 
+                              ? 'bg-white shadow-[0_0_12px_rgba(255,255,255,0.6)]' 
+                              : subscriptionStatus === 'pending'
+                              ? 'bg-white shadow-[0_0_12px_rgba(255,255,255,0.6)]'
+                              : 'bg-white shadow-[0_0_12px_rgba(255,255,255,0.6)]'
+                          }`} />
+                          <p className="text-lg font-bold">
+                            {subscriptionStatus === 'active' 
+                              ? 'Assinatura Ativa' 
+                              : subscriptionStatus === 'pending'
+                              ? 'Pagamento Pendente'
+                              : 'Assinatura Expirada'}
+                          </p>
+                        </div>
+                        {subscriptionStatus === 'active' && nextBillingDate && (
+                          <p className="text-[10px] opacity-80 mt-2 font-mono">
+                            Próxima cobrança: {nextBillingDate.toLocaleDateString('pt-BR')}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {subscriptionStatus === 'active' ? (
+                      <div className="p-8 bg-green-50/50 rounded-[40px] border border-green-100">
+                        <div className="flex items-start gap-4">
+                          <div className="w-12 h-12 bg-green-600 text-white rounded-2xl flex items-center justify-center shrink-0 shadow-lg">
+                            <CheckCircle2 size={24} />
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="text-lg font-black text-green-900">Assinatura Ativa</h4>
+                            <p className="text-green-700 text-sm font-medium mt-1">
+                              Sua assinatura está ativa e será renovada automaticamente. O pagamento será processado via Mercado Pago na data de vencimento.
+                            </p>
+                            {nextBillingDate && (
+                              <div className="mt-4 p-4 bg-white rounded-2xl border border-green-200">
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <p className="text-xs font-black uppercase text-green-600 tracking-widest mb-1">Próxima Cobrança</p>
+                                    <p className="text-lg font-black text-slate-900">
+                                      {nextBillingDate.toLocaleDateString('pt-BR', { 
+                                        day: '2-digit', 
+                                        month: 'long', 
+                                        year: 'numeric' 
+                                      })}
+                                    </p>
+                                  </div>
+                                  <Calendar className="text-green-600" size={32} />
+                                </div>
+                              </div>
+                            )}
+                            <div className="mt-6 flex gap-3">
+                              <button 
+                                type="button"
+                                onClick={handlePaySubscription}
+                                disabled={isPayingSubscription}
+                                className="px-5 py-2.5 bg-green-600 text-white rounded-xl font-black text-xs hover:bg-green-700 transition-all flex items-center gap-2 disabled:opacity-50"
+                              >
+                                {isPayingSubscription ? (
+                                  <>
+                                    <RefreshCw size={14} className="animate-spin" /> Processando...
+                                  </>
+                                ) : (
+                                  <>
+                                    <CreditCard size={14} /> Pagar Agora
+                                  </>
+                                )}
+                              </button>
+                              <button 
+                                type="button"
+                                className="px-5 py-2.5 bg-white border border-green-200 text-green-700 rounded-xl font-black text-xs hover:bg-green-100 transition-all flex items-center gap-2"
+                              >
+                                <Info size={14} /> Ver Histórico
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="p-10 border-2 border-dashed border-slate-100 rounded-[48px] text-center bg-slate-50/30">
+                        <div className="w-20 h-20 bg-green-600 text-white rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-2xl rotate-3">
+                          <Calendar size={32} />
+                        </div>
+                        <h4 className="text-2xl font-black text-slate-900 mb-3">
+                          {subscriptionStatus === 'pending' ? 'Assinar Plano Mensal' : 'Renovar Assinatura'}
+                        </h4>
+                        <p className="text-slate-500 text-sm max-w-sm mx-auto mb-6 font-medium leading-relaxed">
+                          {subscriptionStatus === 'pending' 
+                            ? 'Assine o plano mensal para continuar utilizando todas as funcionalidades da plataforma.'
+                            : 'Sua assinatura expirou. Renove agora para continuar utilizando a plataforma.'}
+                        </p>
+                        
+                        <div className="mb-8 p-6 bg-white rounded-3xl border border-slate-200 max-w-md mx-auto">
+                          <div className="flex items-center justify-between mb-4">
+                            <span className="text-sm font-bold text-slate-600">Plano Professional SaaS</span>
+                            <span className="text-2xl font-black text-slate-900">R$ {business.monthly_fee?.toFixed(2) || '0.00'}</span>
+                          </div>
+                          <div className="text-left space-y-2 text-xs text-slate-500">
+                            <p className="flex items-center gap-2">
+                              <Check size={14} className="text-green-500" /> Acesso completo à plataforma
+                            </p>
+                            <p className="flex items-center gap-2">
+                              <Check size={14} className="text-green-500" /> Split automático de pagamentos
+                            </p>
+                            <p className="flex items-center gap-2">
+                              <Check size={14} className="text-green-500" /> Suporte prioritário
+                            </p>
+                            <p className="flex items-center gap-2">
+                              <Check size={14} className="text-green-500" /> Renovação automática mensal
+                            </p>
+                          </div>
+                        </div>
+                        
+                        <button 
+                          type="button"
+                          onClick={handlePaySubscription}
+                          disabled={isPayingSubscription || !business.mp_connected}
+                          className="flex items-center gap-3 px-12 py-5 bg-green-600 text-white rounded-[24px] font-black text-lg shadow-2xl shadow-green-200 hover:bg-green-700 transition-all mx-auto active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {isPayingSubscription ? (
+                            <>
+                              <RefreshCw size={24} className="animate-spin" /> Processando Pagamento...
+                            </>
+                          ) : (
+                            <>
+                              <CreditCard size={24} /> {subscriptionStatus === 'pending' ? 'Assinar Agora' : 'Renovar Assinatura'}
+                            </>
+                          )}
+                        </button>
+                        
+                        {!business.mp_connected && (
+                          <p className="mt-4 text-xs text-amber-600 font-medium">
+                            ⚠️ Conecte sua conta do Mercado Pago primeiro para assinar
+                          </p>
+                        )}
+                        
+                        <div className="mt-8 flex items-center justify-center gap-4 text-slate-400">
+                          <div className="flex items-center gap-1.5">
+                            <ShieldCheck size={16} className="text-green-500" />
+                            <span className="text-[10px] font-black uppercase tracking-widest">Pagamento Seguro</span>
+                          </div>
+                          <div className="w-1 h-1 bg-slate-200 rounded-full" />
+                          <div className="flex items-center gap-1.5">
+                            <Zap size={16} className="text-amber-500" />
+                            <span className="text-[10px] font-black uppercase tracking-widest">Renovação Automática</span>
                           </div>
                         </div>
                       </div>
