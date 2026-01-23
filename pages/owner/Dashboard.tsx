@@ -16,7 +16,7 @@ import {
   CheckCircle
 } from 'lucide-react';
 import { DashboardCard } from '../../components/DashboardCard';
-import { api } from '../../services/mockApi';
+import { api } from '../../services/supabaseApi';
 import { Transaction, Business, Appointment } from '../../types';
 import { getBusinessAdvice } from '../../services/aiAssistant';
 import { Link } from 'react-router-dom';

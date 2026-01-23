@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { api } from '../../services/mockApi';
+import { api } from '../../services/supabaseApi';
 import { Service } from '../../types';
 import { Plus, Clock, Edit2, Trash2, Scissors, X } from 'lucide-react';
 

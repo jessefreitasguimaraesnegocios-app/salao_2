@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { api } from '../../services/mockApi';
+import { api } from '../../services/supabaseApi';
 import { Appointment, Service } from '../../types';
 import { 
   Calendar as CalendarIcon, 

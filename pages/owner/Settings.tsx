@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { api } from '../../services/mockApi';
+import { api } from '../../services/supabaseApi';
 import { Business, OpeningHour, BusinessType, NotificationSettings } from '../../types';
 import { 
   initiateMercadoPagoOAuth, 

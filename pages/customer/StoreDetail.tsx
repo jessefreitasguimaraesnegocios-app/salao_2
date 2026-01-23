@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { api } from '../../services/mockApi';
+import { api } from '../../services/supabaseApi';
 import { createMercadoPagoPayment, updateTransactionWithPaymentId } from '../../services/mercadoPagoPayment';
 import { Business, BusinessType, Product, Service, CartItem, TeamMember, UserProfile } from '../../types';
 import { ShoppingCart, Clock, CheckCircle2, ChevronLeft, CreditCard, ArrowRight, Minus, Plus, X, User, Calendar, ChevronRight, Scissors, Wallet, QrCode, Loader2, Tag, Package, Sparkles, Gift } from 'lucide-react';

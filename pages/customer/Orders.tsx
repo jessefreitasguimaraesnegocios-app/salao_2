@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { api } from '../../services/mockApi';
+import { api } from '../../services/supabaseApi';
 import { Transaction } from '../../types';
 import { ShoppingBag, Calendar, CheckCircle, Package, Store, CreditCard, QrCode } from 'lucide-react';
 

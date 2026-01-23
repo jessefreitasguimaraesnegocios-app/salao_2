@@ -2,9 +2,13 @@
 import React, { useState, useEffect } from 'react';
 import { HashRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { UserProfile, UserRole } from './types';
-import { api } from './services/mockApi';
+import { api } from './services/supabaseApi';
+import { getSupabaseClient } from './services/supabaseClient';
+import { getUserProfile } from './services/authService';
 import { Sidebar } from './components/Sidebar';
 import { LandingPage } from './pages/LandingPage';
+import { OTPLogin } from './pages/customer/OTPLogin';
+import { PasswordLogin } from './pages/auth/PasswordLogin';
 import { OwnerDashboard } from './pages/owner/Dashboard';
 import { OwnerProducts } from './pages/owner/Products';
 import { OwnerServices } from './pages/owner/Services';
@@ -67,10 +71,76 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.getCurrentUser().then(u => {
-      setUser(u);
-      setLoading(false);
+    // Função para carregar usuário do Supabase Auth
+    const loadUser = async () => {
+      try {
+        const supabase = getSupabaseClient();
+        
+        // Verificar sessão atual
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session) {
+          // Buscar perfil do usuário na tabela profiles
+          const profile = await getUserProfile();
+          
+          if (profile) {
+            // Converter Profile para UserProfile
+            const userProfile: UserProfile = {
+              id: profile.id,
+              email: profile.email || '',
+              name: profile.name || 'Cliente',
+              role: profile.role,
+              phone: profile.phone || undefined,
+              avatar: profile.avatar || undefined
+            };
+            setUser(userProfile);
+          } else {
+            // Se não tem perfil, tentar buscar via api (fallback)
+            const apiUser = await api.getCurrentUser();
+            setUser(apiUser);
+          }
+        } else {
+          // Se não tem sessão, tentar buscar via api (fallback)
+          const apiUser = await api.getCurrentUser();
+          setUser(apiUser);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar usuário:', error);
+        // Em caso de erro, não há usuário autenticado
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadUser();
+
+    // Escutar mudanças de autenticação
+    const supabase = getSupabaseClient();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        // Usuário fez login, buscar perfil
+        const profile = await getUserProfile();
+        if (profile) {
+          const userProfile: UserProfile = {
+            id: profile.id,
+            email: profile.email || '',
+            name: profile.name || 'Cliente',
+            role: profile.role,
+            phone: profile.phone || undefined,
+            avatar: profile.avatar || undefined
+          };
+          setUser(userProfile);
+        }
+      } else if (event === 'SIGNED_OUT') {
+        // Usuário fez logout
+        setUser(null);
+      }
     });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   if (loading) return (
@@ -86,14 +156,20 @@ const App: React.FC = () => {
         {/* Public Landing */}
         <Route path="/" element={!user ? <LandingPage /> : <Navigate to={user.role === UserRole.SUPER_ADMIN ? "/admin" : (user.role === UserRole.BUSINESS_OWNER ? "/owner" : "/explore")} />} />
         
+        {/* Public Login (OTP) - Apenas para clientes */}
+        <Route path="/login" element={!user ? <OTPLogin /> : <Navigate to={user.role === UserRole.SUPER_ADMIN ? "/admin" : (user.role === UserRole.BUSINESS_OWNER ? "/owner" : "/explore")} />} />
+        
+        {/* Public Login (Senha) - Para estabelecimentos e admins */}
+        <Route path="/login-password" element={!user ? <PasswordLogin /> : <Navigate to={user.role === UserRole.SUPER_ADMIN ? "/admin" : (user.role === UserRole.BUSINESS_OWNER ? "/owner" : "/explore")} />} />
+        
         {/* Customer Routes */}
-        <Route path="/explore" element={user ? <Layout user={user}><CustomerExplore /></Layout> : <Navigate to="/" />} />
-        <Route path="/store/:id" element={user ? <Layout user={user}><StoreDetail /></Layout> : <Navigate to="/" />} />
-        <Route path="/orders" element={user ? <Layout user={user}><CustomerOrders /></Layout> : <Navigate to="/" />} />
-        <Route path="/appointments" element={user ? <Layout user={user}><CustomerAppointments /></Layout> : <Navigate to="/" />} />
+        <Route path="/explore" element={user ? <Layout user={user}><CustomerExplore /></Layout> : <Navigate to="/login" />} />
+        <Route path="/store/:id" element={user ? <Layout user={user}><StoreDetail /></Layout> : <Navigate to="/login" />} />
+        <Route path="/orders" element={user ? <Layout user={user}><CustomerOrders /></Layout> : <Navigate to="/login" />} />
+        <Route path="/appointments" element={user ? <Layout user={user}><CustomerAppointments /></Layout> : <Navigate to="/login" />} />
         
         {/* Owner Routes */}
-        <Route path="/owner" element={user?.role === UserRole.BUSINESS_OWNER ? <Layout user={user}><OwnerDashboard /></Layout> : <Navigate to="/" />} />
+        <Route path="/owner" element={user?.role === UserRole.BUSINESS_OWNER ? <Layout user={user}><OwnerDashboard /></Layout> : <Navigate to="/login-password?role=BUSINESS_OWNER" />} />
         <Route path="/owner/appointments" element={user?.role === UserRole.BUSINESS_OWNER ? <Layout user={user}><OwnerAppointments /></Layout> : <Navigate to="/" />} />
         <Route path="/owner/products" element={user?.role === UserRole.BUSINESS_OWNER ? <Layout user={user}><OwnerProducts /></Layout> : <Navigate to="/" />} />
         <Route path="/owner/services" element={user?.role === UserRole.BUSINESS_OWNER ? <Layout user={user}><OwnerServices /></Layout> : <Navigate to="/" />} />
@@ -102,7 +178,7 @@ const App: React.FC = () => {
         <Route path="/owner/settings" element={user?.role === UserRole.BUSINESS_OWNER ? <Layout user={user}><OwnerSettings /></Layout> : <Navigate to="/" />} />
         
         {/* Admin Routes */}
-        <Route path="/admin" element={user?.role === UserRole.SUPER_ADMIN ? <Layout user={user}><AdminDashboard /></Layout> : <Navigate to="/" />} />
+        <Route path="/admin" element={user?.role === UserRole.SUPER_ADMIN ? <Layout user={user}><AdminDashboard /></Layout> : <Navigate to="/login-password?role=SUPER_ADMIN" />} />
         <Route path="/admin/partners" element={user?.role === UserRole.SUPER_ADMIN ? <Layout user={user}><AdminPartners /></Layout> : <Navigate to="/" />} />
         <Route path="/admin/transactions" element={user?.role === UserRole.SUPER_ADMIN ? <Layout user={user}><AdminTransactions /></Layout> : <Navigate to="/" />} />
         <Route path="/admin/users" element={user?.role === UserRole.SUPER_ADMIN ? <Layout user={user}><AdminUsers /></Layout> : <Navigate to="/" />} />

@@ -4,7 +4,8 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { LogOut, Scissors, Bell, X, Calendar, Clock, CheckCircle2, User } from 'lucide-react';
 import { UserRole, Appointment } from '../types';
 import { NAVIGATION } from '../constants';
-import { api } from '../services/mockApi';
+import { api } from '../services/supabaseApi';
+import { logout as authLogout } from '../services/authService';
 
 interface SidebarProps {
   role: UserRole;
@@ -55,7 +56,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ role, userName, businessId, is
     }
   }, [businessId, role]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      // Tentar logout do Supabase Auth primeiro
+      await authLogout();
+    } catch (error) {
+      console.warn('Erro ao fazer logout do Supabase:', error);
+    }
+    // Limpar localStorage
     api.logout();
     navigate('/');
     window.location.reload();

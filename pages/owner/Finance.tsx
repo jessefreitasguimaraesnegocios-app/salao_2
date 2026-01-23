@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { api } from '../../services/mockApi';
+import { api } from '../../services/supabaseApi';
 import { Transaction, Business } from '../../types';
 import { CreditCard, Wallet, ArrowUpRight, ArrowDownLeft, Filter, Download } from 'lucide-react';
 import { DashboardCard } from '../../components/DashboardCard';

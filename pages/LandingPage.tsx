@@ -3,24 +3,20 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Scissors, ShieldCheck, User, Store, ArrowRight, Zap } from 'lucide-react';
 import { UserRole } from '../types';
-import { api } from '../services/mockApi';
+// Removido: não usa mais mockApi
 
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
 
   const handleLogin = async (role: UserRole) => {
-    let email = '';
-    if (role === UserRole.SUPER_ADMIN) email = 'admin@belezahub.com';
-    if (role === UserRole.BUSINESS_OWNER) email = 'joao@barbearia.com';
-    if (role === UserRole.CUSTOMER) email = 'cliente@exemplo.com';
-
-    const user = await api.login(email, role);
-    if (user) {
-      if (role === UserRole.SUPER_ADMIN) navigate('/admin');
-      else if (role === UserRole.BUSINESS_OWNER) navigate('/owner');
-      else navigate('/explore');
-      window.location.reload();
+    // Clientes usam OTP (sem senha)
+    if (role === UserRole.CUSTOMER) {
+      navigate('/login?role=CUSTOMER');
+      return;
     }
+    
+    // Estabelecimentos e Admins usam senha
+    navigate(`/login-password?role=${role}`);
   };
 
   return (

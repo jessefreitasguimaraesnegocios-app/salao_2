@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { api } from '../../services/mockApi';
+import { api } from '../../services/supabaseApi';
 import { Appointment, Business } from '../../types';
 import { Calendar, Clock, CheckCircle2, User, Store, Scissors, MapPin } from 'lucide-react';
 

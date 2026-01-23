@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { api } from '../../services/mockApi';
+import { api } from '../../services/supabaseApi';
 import { UserProfile, UserRole } from '../../types';
 import { 
   Users as UsersIcon, 

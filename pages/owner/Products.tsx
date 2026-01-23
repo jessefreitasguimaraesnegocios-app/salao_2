@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { api } from '../../services/mockApi';
+import { api } from '../../services/supabaseApi';
 import { Product } from '../../types';
 import { Plus, Search, Edit2, Trash2, Package, X, Upload, ImageIcon, Camera, RefreshCw, Check, AlertCircle } from 'lucide-react';
 

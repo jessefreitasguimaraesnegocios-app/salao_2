@@ -18,6 +18,17 @@ export interface SecuritySettings {
   last_password_change: string;
 }
 
+export interface Profile {
+  id: string;
+  role: UserRole;
+  name: string | null;
+  phone: string | null;
+  email: string | null;
+  avatar: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface UserProfile {
   id: string;
   email: string;
@@ -25,6 +36,7 @@ export interface UserProfile {
   role: UserRole;
   business_id?: string;
   avatar?: string;
+  phone?: string; // Telefone para OTP
   security?: SecuritySettings;
 }
 
