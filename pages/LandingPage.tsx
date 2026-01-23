@@ -9,14 +9,8 @@ export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
 
   const handleLogin = async (role: UserRole) => {
-    // Clientes usam OTP (sem senha)
-    if (role === UserRole.CUSTOMER) {
-      navigate('/login?role=CUSTOMER');
-      return;
-    }
-    
-    // Estabelecimentos e Admins usam senha
-    navigate(`/login-password?role=${role}`);
+    // Todos os usuários agora usam login com senha
+    navigate(`/login?role=${role}`);
   };
 
   return (
@@ -70,6 +64,17 @@ export const LandingPage: React.FC = () => {
               </div>
             </div>
           </button>
+          
+          {/* Link para Cadastro */}
+          <div className="text-center">
+            <p className="text-slate-600 mb-2">Não tem uma conta?</p>
+            <button
+              onClick={() => navigate('/signup?role=CUSTOMER')}
+              className="text-indigo-600 hover:text-indigo-700 font-bold text-lg transition-colors"
+            >
+              Cadastre-se gratuitamente
+            </button>
+          </div>
 
           {/* Owner Entry - Pequeno e Discreto */}
           <button 

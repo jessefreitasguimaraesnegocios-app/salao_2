@@ -7,8 +7,8 @@ import { getSupabaseClient } from './services/supabaseClient';
 import { getUserProfile } from './services/authService';
 import { Sidebar } from './components/Sidebar';
 import { LandingPage } from './pages/LandingPage';
-import { OTPLogin } from './pages/customer/OTPLogin';
 import { PasswordLogin } from './pages/auth/PasswordLogin';
+import { Signup } from './pages/auth/Signup';
 import { OwnerDashboard } from './pages/owner/Dashboard';
 import { OwnerProducts } from './pages/owner/Products';
 import { OwnerServices } from './pages/owner/Services';
@@ -156,20 +156,20 @@ const App: React.FC = () => {
         {/* Public Landing */}
         <Route path="/" element={!user ? <LandingPage /> : <Navigate to={user.role === UserRole.SUPER_ADMIN ? "/admin" : (user.role === UserRole.BUSINESS_OWNER ? "/owner" : "/explore")} />} />
         
-        {/* Public Login (OTP) - Apenas para clientes */}
-        <Route path="/login" element={!user ? <OTPLogin /> : <Navigate to={user.role === UserRole.SUPER_ADMIN ? "/admin" : (user.role === UserRole.BUSINESS_OWNER ? "/owner" : "/explore")} />} />
+        {/* Public Login (Email + Senha) - Para todos os tipos */}
+        <Route path="/login" element={!user ? <PasswordLogin /> : <Navigate to={user.role === UserRole.SUPER_ADMIN ? "/admin" : (user.role === UserRole.BUSINESS_OWNER ? "/owner" : "/explore")} />} />
         
-        {/* Public Login (Senha) - Para estabelecimentos e admins */}
-        <Route path="/login-password" element={!user ? <PasswordLogin /> : <Navigate to={user.role === UserRole.SUPER_ADMIN ? "/admin" : (user.role === UserRole.BUSINESS_OWNER ? "/owner" : "/explore")} />} />
+        {/* Public Signup (Cadastro) - Para todos os tipos */}
+        <Route path="/signup" element={!user ? <Signup /> : <Navigate to={user.role === UserRole.SUPER_ADMIN ? "/admin" : (user.role === UserRole.BUSINESS_OWNER ? "/owner" : "/explore")} />} />
         
         {/* Customer Routes */}
-        <Route path="/explore" element={user ? <Layout user={user}><CustomerExplore /></Layout> : <Navigate to="/login" />} />
+        <Route path="/explore" element={user ? <Layout user={user}><CustomerExplore /></Layout> : <Navigate to="/login?role=CUSTOMER" />} />
         <Route path="/store/:id" element={user ? <Layout user={user}><StoreDetail /></Layout> : <Navigate to="/login" />} />
         <Route path="/orders" element={user ? <Layout user={user}><CustomerOrders /></Layout> : <Navigate to="/login" />} />
         <Route path="/appointments" element={user ? <Layout user={user}><CustomerAppointments /></Layout> : <Navigate to="/login" />} />
         
         {/* Owner Routes */}
-        <Route path="/owner" element={user?.role === UserRole.BUSINESS_OWNER ? <Layout user={user}><OwnerDashboard /></Layout> : <Navigate to="/login-password?role=BUSINESS_OWNER" />} />
+        <Route path="/owner" element={user?.role === UserRole.BUSINESS_OWNER ? <Layout user={user}><OwnerDashboard /></Layout> : <Navigate to="/login?role=BUSINESS_OWNER" />} />
         <Route path="/owner/appointments" element={user?.role === UserRole.BUSINESS_OWNER ? <Layout user={user}><OwnerAppointments /></Layout> : <Navigate to="/" />} />
         <Route path="/owner/products" element={user?.role === UserRole.BUSINESS_OWNER ? <Layout user={user}><OwnerProducts /></Layout> : <Navigate to="/" />} />
         <Route path="/owner/services" element={user?.role === UserRole.BUSINESS_OWNER ? <Layout user={user}><OwnerServices /></Layout> : <Navigate to="/" />} />
@@ -178,7 +178,7 @@ const App: React.FC = () => {
         <Route path="/owner/settings" element={user?.role === UserRole.BUSINESS_OWNER ? <Layout user={user}><OwnerSettings /></Layout> : <Navigate to="/" />} />
         
         {/* Admin Routes */}
-        <Route path="/admin" element={user?.role === UserRole.SUPER_ADMIN ? <Layout user={user}><AdminDashboard /></Layout> : <Navigate to="/login-password?role=SUPER_ADMIN" />} />
+        <Route path="/admin" element={user?.role === UserRole.SUPER_ADMIN ? <Layout user={user}><AdminDashboard /></Layout> : <Navigate to="/login?role=SUPER_ADMIN" />} />
         <Route path="/admin/partners" element={user?.role === UserRole.SUPER_ADMIN ? <Layout user={user}><AdminPartners /></Layout> : <Navigate to="/" />} />
         <Route path="/admin/transactions" element={user?.role === UserRole.SUPER_ADMIN ? <Layout user={user}><AdminTransactions /></Layout> : <Navigate to="/" />} />
         <Route path="/admin/users" element={user?.role === UserRole.SUPER_ADMIN ? <Layout user={user}><AdminUsers /></Layout> : <Navigate to="/" />} />

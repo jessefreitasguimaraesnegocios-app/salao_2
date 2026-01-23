@@ -1,11 +1,11 @@
 -- =====================================================
--- AUTENTICAÇÃO OTP (ONE-TIME PASSWORD) - MEU SALÃO APP
+-- AUTENTICAÇÃO E PERFIS - MEU SALÃO APP
 -- =====================================================
--- Este schema implementa login sem senha para CLIENTES
--- usando OTP via telefone ou email com Supabase Auth
+-- Este schema implementa autenticação com email e senha
+-- para todos os tipos de usuário (Clientes, Estabelecimentos, Admins)
 -- 
--- NOTA: Estabelecimentos e Admins usam autenticação com senha
--- e devem ter perfis criados manualmente ou via signup com senha
+-- Todos os usuários podem se cadastrar e o trigger cria
+-- o perfil automaticamente com o role especificado
 -- =====================================================
 
 -- =====================================================
@@ -46,41 +46,35 @@ DECLARE
     user_role user_role;
     user_name TEXT;
 BEGIN
-    -- IMPORTANTE: Este trigger cria perfis APENAS para usuários OTP (clientes)
-    -- Estabelecimentos e Admins devem ter perfis criados manualmente ou via signup com senha
-    
     -- Determinar role do usuário
     -- Pode ser definido via raw_user_meta_data->>'role' no signup
     -- Valores aceitos: 'CUSTOMER', 'BUSINESS_OWNER', 'SUPER_ADMIN'
     -- Se não especificado, padrão é 'CUSTOMER'
     user_role := COALESCE(
         (NEW.raw_user_meta_data->>'role')::user_role,
-        'CUSTOMER'
+        'CUSTOMER'  -- Padrão se não especificado
     );
     
-    -- IMPORTANTE: Apenas criar perfil automaticamente para CUSTOMER
-    -- BUSINESS_OWNER e SUPER_ADMIN devem ter perfis criados manualmente
-    IF user_role != 'CUSTOMER' THEN
-        -- Para owners e admins, não criar perfil automaticamente
-        -- Eles devem ter perfis criados manualmente ou via signup com senha
-        RETURN NEW;
-    END IF;
-    
-    -- Determinar nome do usuário (apenas para clientes)
+    -- Determinar nome do usuário
     user_name := COALESCE(
         NEW.raw_user_meta_data->>'name',
-        'Cliente'
+        CASE 
+            WHEN user_role = 'SUPER_ADMIN' THEN 'Super Admin'
+            WHEN user_role = 'BUSINESS_OWNER' THEN 'Proprietário'
+            ELSE 'Cliente'
+        END
     );
     
-    -- Inserir perfil na tabela profiles (apenas para CUSTOMER)
+    -- Inserir perfil na tabela profiles para TODOS os tipos de usuário
     INSERT INTO public.profiles (id, role, email, phone, name)
     VALUES (
         NEW.id,
-        'CUSTOMER', -- Sempre CUSTOMER para OTP
+        user_role,
         COALESCE(NEW.email, NULL),
         COALESCE(NEW.phone, NULL),
         user_name
     );
+    
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -89,7 +83,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- TRIGGER: Criar perfil após signup
 -- =====================================================
 -- Este trigger é disparado automaticamente quando um novo
--- usuário é criado em auth.users (via OTP)
+-- usuário é criado em auth.users (via signup com email/senha)
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
     AFTER INSERT ON auth.users
@@ -226,9 +220,9 @@ CREATE TRIGGER update_profiles_updated_at
 -- COMENTÁRIOS E DOCUMENTAÇÃO
 -- =====================================================
 
-COMMENT ON TABLE profiles IS 'Perfis de usuários autenticados via Supabase Auth. Criados automaticamente via trigger após signup OTP.';
+COMMENT ON TABLE profiles IS 'Perfis de usuários autenticados via Supabase Auth. Criados automaticamente via trigger após signup com email/senha.';
 COMMENT ON COLUMN profiles.id IS 'ID do usuário em auth.users (FK)';
 COMMENT ON COLUMN profiles.role IS 'Papel do usuário: CUSTOMER, BUSINESS_OWNER, ou SUPER_ADMIN';
-COMMENT ON COLUMN profiles.phone IS 'Telefone do usuário (usado para OTP)';
-COMMENT ON COLUMN profiles.email IS 'Email do usuário (usado para OTP)';
-COMMENT ON FUNCTION handle_new_user() IS 'Cria perfil automaticamente após signup via OTP, atribuindo role CUSTOMER por padrão';
+COMMENT ON COLUMN profiles.phone IS 'Telefone do usuário (opcional)';
+COMMENT ON COLUMN profiles.email IS 'Email do usuário (usado para login)';
+COMMENT ON FUNCTION handle_new_user() IS 'Cria perfil automaticamente após signup, atribuindo role baseado em raw_user_meta_data->>role ou CUSTOMER por padrão';
